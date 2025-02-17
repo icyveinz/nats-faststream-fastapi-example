@@ -1,0 +1,36 @@
+version: "3.4"
+
+services:
+  nats:
+    image: nats:latest
+    container_name: nats_server
+    ports:
+      - "4222:4222"
+    networks:
+      - combined-network
+
+  publisher:
+    build: ./publisher
+    container_name: fastapi_publisher
+    depends_on:
+      - nats
+    environment:
+      - NATS_URL=nats://nats:4222
+    ports:
+      - "8000:8000"
+    networks:
+      - combined-network
+
+  worker:
+    build: ./worker
+    container_name: faststream_worker
+    depends_on:
+      - nats
+    environment:
+      - NATS_URL=nats://nats:4222
+    networks:
+      - combined-network
+
+networks:
+  combined-network:
+    driver: bridge
