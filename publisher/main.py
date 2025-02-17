@@ -1,3 +1,4 @@
+import json
 from fastapi import FastAPI
 from nats.aio.client import Client as NATS
 import asyncio
@@ -10,7 +11,8 @@ NATS_URL = os.getenv("NATS_URL", "nats://localhost:4222")
 async def publish_message(data: dict):
     nc = NATS()
     await nc.connect(NATS_URL)
-    await nc.publish("events", str(data).encode())
+    # Use json.dumps to create a proper JSON string
+    await nc.publish("events", json.dumps(data).encode("utf-8"))
     await nc.close()
 
 @app.post("/publish")
