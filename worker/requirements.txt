@@ -1,2 +1,2 @@
-faststream[nats]
+faststream[rabbit]
 aiohttp

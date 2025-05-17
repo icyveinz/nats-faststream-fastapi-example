@@ -1,21 +1,22 @@
-import json
-from fastapi import FastAPI
-from nats.aio.client import Client as NATS
-import asyncio
 import os
+from fastapi import FastAPI
+from faststream.rabbit import RabbitBroker
 
 app = FastAPI()
 
-NATS_URL = os.getenv("NATS_URL", "nats://localhost:4222")
+BROKER_URL = os.getenv("BROKER_URL", "amqp://guest:guest@localhost:5672/")
+broker = RabbitBroker(BROKER_URL)
 
-async def publish_message(data: dict):
-    nc = NATS()
-    await nc.connect(NATS_URL)
-    # Use json.dumps to create a proper JSON string
-    await nc.publish("events", json.dumps(data).encode("utf-8"))
-    await nc.close()
+@app.on_event("startup")
+async def startup():
+    await broker.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await broker.close()
 
 @app.post("/publish")
 async def publish(data: dict):
-    asyncio.create_task(publish_message(data))
+    await broker.publish(data, queue="events")
     return {"message": "Published successfully"}
+

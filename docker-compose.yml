@@ -1,11 +1,15 @@
 version: "3.4"
 
 services:
-  nats:
-    image: nats:latest
-    container_name: nats_server
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_server
     ports:
-      - "4222:4222"
+      - "5672:5672"      # Broker port
+      - "15672:15672"    # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     networks:
       - combined-network
 
@@ -13,9 +17,9 @@ services:
     build: ./publisher
     container_name: fastapi_publisher
     depends_on:
-      - nats
+      - rabbitmq
     environment:
-      - NATS_URL=nats://nats:4222
+      - BROKER_URL=amqp://guest:guest@rabbitmq:5672/
     ports:
       - "8000:8000"
     networks:
@@ -25,9 +29,9 @@ services:
     build: ./worker
     container_name: faststream_worker
     depends_on:
-      - nats
+      - rabbitmq
     environment:
-      - NATS_URL=nats://nats:4222
+      - BROKER_URL=amqp://guest:guest@rabbitmq:5672/
     networks:
       - combined-network
 
